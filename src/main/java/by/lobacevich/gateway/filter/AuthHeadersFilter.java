@@ -26,6 +26,7 @@ public class AuthHeadersFilter implements GlobalFilter {
                             .header("X-Role", auth.getAuthorities().iterator().next().getAuthority())
                             .build();
                     return chain.filter(exchange.mutate().request(mutated).build());
-                });
+                })
+                .switchIfEmpty(chain.filter(exchange));
     }
 }

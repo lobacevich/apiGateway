@@ -27,3 +27,4 @@ logging:
     org.springframework.http.server.reactive: DEBUG
 
 authClient.url: http://localhost:8081
+userClient.url: http://localhost:8082
