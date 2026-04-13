@@ -3,6 +3,7 @@ package by.lobacevich.gateway.client;
 import by.lobacevich.gateway.dto.UserCreateRequestDto;
 import by.lobacevich.gateway.dto.UserCreatedResponseDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
@@ -21,6 +22,7 @@ public class UserClient extends AbstractWebClient {
                 .uri("/users")
                 .header("X-User-Id", "0")
                 .header("X-Role", "ROLE_ADMIN")
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(createDto)
                 .exchangeToMono(response -> handleResponse(response,
                         UserCreatedResponseDto.class,

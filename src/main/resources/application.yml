@@ -8,15 +8,15 @@ spring:
         webflux:
           routes:
             - id: auth-service
-              uri: http://localhost:8081
+              uri: ${authService.url:http://localhost:8081}
               predicates:
                 - Path=/auth/**,/tokens/**
             - id: user-service
-              uri: http://localhost:8082
+              uri: ${userService.url:http://localhost:8082}
               predicates:
                 - Path=/users/**,/cards/**
             - id: order-service
-              uri: http://localhost:8083
+              uri: ${orderService.url:http://localhost:8083}
               predicates:
                 - Path=/orders/**,/items/**
 

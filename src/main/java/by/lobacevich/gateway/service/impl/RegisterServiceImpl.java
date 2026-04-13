@@ -41,6 +41,7 @@ public class RegisterServiceImpl implements RegisterService {
                                         .doOnError(deleteError ->
                                                 log.error("Failed to delete user after rollback: userId={}",
                                                         userId, deleteError))
+                                        .onErrorResume(deleteError -> Mono.empty())
                                         .then(Mono.error(e));
                             });
                 });

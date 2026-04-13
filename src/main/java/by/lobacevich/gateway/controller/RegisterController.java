@@ -5,6 +5,7 @@ import by.lobacevich.gateway.dto.CreateFullRequestDto;
 import by.lobacevich.gateway.service.RegisterService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +22,6 @@ public class RegisterController {
     public Mono<ResponseEntity<CreatedFullResponseDto>> registerUser(@Valid @RequestBody CreateFullRequestDto requestDto) {
 
         return service.registerUser(requestDto)
-                .map(ResponseEntity::ok);
+                .map(body -> ResponseEntity.status(HttpStatus.CREATED).body(body));
     }
 }

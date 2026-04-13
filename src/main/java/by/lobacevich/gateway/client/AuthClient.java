@@ -6,6 +6,7 @@ import by.lobacevich.gateway.dto.ValidateRequestDto;
 import by.lobacevich.gateway.dto.ValidateResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
@@ -23,6 +24,7 @@ public class AuthClient extends AbstractWebClient {
     public Mono<ValidateResponseDto> validateToken(String token) {
         return authWebClient.post()
                 .uri("/auth/validate")
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(new ValidateRequestDto(token))
                 .exchangeToMono(response -> handleResponse(response,
                         ValidateResponseDto.class,
@@ -35,6 +37,7 @@ public class AuthClient extends AbstractWebClient {
     public Mono<AuthRegisteredResponseDto> register(AuthRegisterRequestDto request) {
         return authWebClient.post()
                 .uri("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchangeToMono(response -> handleResponse(response,
                         AuthRegisteredResponseDto.class,
