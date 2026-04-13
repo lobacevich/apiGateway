@@ -17,7 +17,7 @@ import org.springframework.security.web.server.authentication.AuthenticationWebF
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    public static final String[] PERMIT_ALL = {
+    private static final String[] PERMIT_ALL = {
             "/auth/register",
             "/auth/login",
             "/actuator/**"

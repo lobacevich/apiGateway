@@ -1,4 +1,4 @@
-package by.lobacevich.gateway.exceptionHandler;
+package by.lobacevich.gateway.exceptionhandler;
 
 import by.lobacevich.gateway.exception.ServiceException;
 import by.lobacevich.gateway.exception.ServiceUnavailableException;

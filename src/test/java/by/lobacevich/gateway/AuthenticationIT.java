@@ -26,7 +26,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
         "authClient.url=http://localhost:${wiremock.server.port}",
         "orderService.url=http://localhost:${wiremock.server.port}",
 })
-public class AuthenticationIT {
+class AuthenticationIT {
 
     private static final String TOKEN_PREFIX = "Bearer ";
     private static final String TOKEN = "token";
