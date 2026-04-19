@@ -14,11 +14,4 @@ public class WebClientConfig {
                 .baseUrl(baseUrl)
                 .build();
     }
-
-    @Bean
-    public WebClient userWebClient(@Value("${userClient.url}") String baseUrl) {
-        return WebClient.builder()
-                .baseUrl(baseUrl)
-                .build();
-    }
 }

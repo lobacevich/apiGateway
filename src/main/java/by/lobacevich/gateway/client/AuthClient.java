@@ -1,9 +1,8 @@
 package by.lobacevich.gateway.client;
 
-import by.lobacevich.gateway.dto.AuthRegisterRequestDto;
-import by.lobacevich.gateway.dto.AuthRegisteredResponseDto;
 import by.lobacevich.gateway.dto.ValidateRequestDto;
 import by.lobacevich.gateway.dto.ValidateResponseDto;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
@@ -21,6 +20,7 @@ public class AuthClient extends AbstractWebClient {
 
     private static final String SERVICE_NAME = "Auth service";
 
+    @CircuitBreaker(name = "authService")
     public Mono<ValidateResponseDto> validateToken(String token) {
         return authWebClient.post()
                 .uri("/auth/validate")
@@ -30,18 +30,6 @@ public class AuthClient extends AbstractWebClient {
                         ValidateResponseDto.class,
                         SERVICE_NAME)
                 )
-                .onErrorMap(WebClientRequestException.class,
-                        e -> onConnectionError(SERVICE_NAME));
-    }
-
-    public Mono<AuthRegisteredResponseDto> register(AuthRegisterRequestDto request) {
-        return authWebClient.post()
-                .uri("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchangeToMono(response -> handleResponse(response,
-                        AuthRegisteredResponseDto.class,
-                        SERVICE_NAME))
                 .onErrorMap(WebClientRequestException.class,
                         e -> onConnectionError(SERVICE_NAME));
     }

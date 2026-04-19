@@ -20,6 +20,17 @@ spring:
               predicates:
                 - Path=/orders/**,/items/**
 
+  resilience4j:
+    circuitbreaker:
+      instances:
+        userService:
+          slidingWindowSize: 10
+          failureRateThreshold: 50
+          waitDurationInOpenState: 10s
+          permittedNumberOfCallsInHalfOpenState: 3
+          ignoreExceptions:
+            - by.lobacevich.gateway.exception.ServiceException
+
 logging:
   file.name: logs/log.log
   level:
@@ -27,4 +38,3 @@ logging:
     org.springframework.http.server.reactive: DEBUG
 
 authClient.url: http://localhost:8081
-userClient.url: http://localhost:8082

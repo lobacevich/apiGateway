@@ -21,4 +21,3 @@ spring:
                 - Path=/orders/**,/items/**
 
 authClient.url: ${AUTH_SERVICE_URL}
-userClient.url: ${USER_SERVICE_URL}

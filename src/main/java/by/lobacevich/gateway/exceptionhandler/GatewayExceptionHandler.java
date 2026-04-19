@@ -9,11 +9,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-
-import java.util.stream.Collectors;
 
 @Log4j2
 @Component
@@ -34,14 +31,6 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
                 log.error("Auth service error: {}, {}", ex.getMessage(), ex.getStackTrace());
                 response.setStatusCode(serviceException.getStatusCode());
                 return AnswerWriter.write(response, serviceException.getMessage());
-            }
-            case WebExchangeBindException bindEx -> {
-                String errorMessage = bindEx.getFieldErrors().stream()
-                        .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                        .collect(Collectors.joining(", "));
-                log.error("Validation error: {}, {}", bindEx.getMessage(), bindEx.getStackTrace());
-                response.setStatusCode(HttpStatus.BAD_REQUEST);
-                return AnswerWriter.write(response, errorMessage);
             }
             default -> {
                 log.error("{}, {}", ex.getMessage(), ex.getStackTrace());

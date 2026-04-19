@@ -1,6 +1,8 @@
 package by.lobacevich.gateway;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.http.Fault;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -52,6 +54,11 @@ class AuthenticationIT {
     @Autowired
     private WebTestClient webTestClient;
 
+    @BeforeEach
+    void resetWireMock() {
+        WireMock.resetAllRequests();
+    }
+
     @Test
     void authenticateAndSendRequest_ShouldValidateTokenAndSentToOrderWithHeaders() {
         stubFor(WireMock.post(urlPathEqualTo("/auth/validate"))
@@ -83,5 +90,56 @@ class AuthenticationIT {
         verify(1, getRequestedFor(urlPathEqualTo("/orders/6"))
                 .withHeader("X-User-Id", equalTo("1"))
                 .withHeader("X-Role", equalTo("ROLE_USER")));
+    }
+
+    @Test
+    void authenticateAndSendRequest_ShouldSendBadRequestStatus() {
+        stubFor(WireMock.post(urlPathEqualTo("/auth/validate"))
+                .withRequestBody(equalToJson(TOKEN_REQUEST))
+                .willReturn(aResponse()
+                        .withStatus(400)));
+
+        stubFor(WireMock.get(urlPathEqualTo("/orders/6"))
+                .withHeader("X-User-Id", equalTo("1"))
+                .withHeader("X-Role", equalTo("ROLE_USER"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(ORDER)));
+
+        webTestClient.get()
+                .uri("/orders/6")
+                .header(HttpHeaders.AUTHORIZATION, TOKEN_PREFIX + TOKEN)
+                .exchange()
+                .expectStatus().isBadRequest();
+
+        verify(1, postRequestedFor(urlPathEqualTo("/auth/validate"))
+                .withRequestBody(equalToJson(TOKEN_REQUEST)));
+        verify(0, getRequestedFor(urlPathEqualTo("/orders/6")));
+    }
+
+    @Test
+    void authenticateAndSendRequest_ShouldSendServiceUnavailableStatus() {
+        stubFor(WireMock.post(urlPathEqualTo("/auth/validate"))
+                .withRequestBody(equalToJson(TOKEN_REQUEST))
+                .willReturn(aResponse()
+                        .withFault(Fault.CONNECTION_RESET_BY_PEER)));
+
+        stubFor(WireMock.get(urlPathEqualTo("/orders/6"))
+                .withHeader("X-User-Id", equalTo("1"))
+                .withHeader("X-Role", equalTo("ROLE_USER"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(ORDER)));
+
+        webTestClient.get()
+                .uri("/orders/6")
+                .header(HttpHeaders.AUTHORIZATION, TOKEN_PREFIX + TOKEN)
+                .exchange()
+                .expectStatus().is5xxServerError();
+
+        verify(1, postRequestedFor(urlPathEqualTo("/auth/validate")));
+        verify(0, getRequestedFor(urlPathEqualTo("/orders/6")));
     }
 }

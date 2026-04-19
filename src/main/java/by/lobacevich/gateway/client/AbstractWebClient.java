@@ -1,6 +1,5 @@
 package by.lobacevich.gateway.client;
 
-import by.lobacevich.gateway.dto.ErrorDto;
 import by.lobacevich.gateway.exception.ServiceException;
 import by.lobacevich.gateway.exception.ServiceUnavailableException;
 import lombok.extern.log4j.Log4j2;
@@ -16,11 +15,10 @@ public abstract class AbstractWebClient {
         if (response.statusCode().is2xxSuccessful()) {
             return response.bodyToMono(dtoClass);
         }
-
-        return response.bodyToMono(ErrorDto.class)
-                .flatMap(errorDto -> {
-                    log.error("{} error: status={}, body={}", serviceName, response.statusCode(), errorDto);
-                    return Mono.error(new ServiceException(errorDto.message(), response.statusCode()));
+        return response.bodyToMono(String.class)
+                .defaultIfEmpty("Authentication service error")
+                .flatMap(body -> {
+                    return Mono.error(new ServiceException(body, response.statusCode()));
                 });
     }
 
