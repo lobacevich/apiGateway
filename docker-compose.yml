@@ -1,0 +1,166 @@
+networks:
+  internal:
+    driver: bridge
+  user-net:
+    driver: bridge
+  auth-net:
+    driver: bridge
+  order-net:
+    driver: bridge
+
+volumes:
+  user-postgres-data:
+  auth-postgres-data:
+  order-postgres-data:
+
+services:
+  api-gateway:
+    build: .
+    container_name: api-gateway
+    ports:
+      - "8080:8084"
+    networks:
+      - internal
+    depends_on:
+      user-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      USER_SERVICE_URL: http://user-service:8082
+      AUTH_SERVICE_URL: http://auth-service:8081
+      ORDER_SERVICE_URL: http://order-service:8083
+
+  user-service:
+    image: lobacevich21/user-service:latest
+    container_name: user-service
+    ports:
+      - "8082:8082"
+    networks:
+      - internal
+      - user-net
+    depends_on:
+      user-postgres:
+        condition: service_healthy
+      user-redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://user-postgres:5432/postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DRIVER: org.postgresql.Driver
+      REDIS_HOST: user-redis
+      REDIS_PORT: 6379
+
+  user-postgres:
+    image: postgres:17.6
+    container_name: user-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5434:5432"
+    networks:
+      - user-net
+    volumes:
+      - user-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user-redis:
+    image: redis:8.2.1
+    container_name: user-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - user-net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    image: lobacevich21/authentication-service:latest
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    networks:
+      - internal
+      - auth-net
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://auth-postgres:5432/postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DRIVER: org.postgresql.Driver
+      JWT_SECRET: VKs3X6p9e8R2tY5w7z9C1f4H6J8kL0nP2qR4sT6uV8wX0yZ2b4c6d8e0f2g4h6j8k0
+      USER_SERVICE_URL: http://user-service:8082
+
+  auth-postgres:
+    image: postgres:17.6
+    container_name: auth-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    networks:
+      - auth-net
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+    image: lobacevich21/order-service:latest
+    container_name: order-service
+    ports:
+      - "8083:8083"
+    networks:
+      - internal
+      - order-net
+    depends_on:
+      order-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://order-postgres:5432/postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DRIVER: org.postgresql.Driver
+      USER_SERVICE_URL: http://user-service:8082
+
+  order-postgres:
+    image: postgres:17.6
+    container_name: order-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5435:5432"
+    networks:
+      - order-net
+    volumes:
+      - order-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5

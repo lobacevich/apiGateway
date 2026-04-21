@@ -1,5 +1,10 @@
 plugins {
     id 'java'
+    id 'org.springframework.boot' version '3.5.10'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'io.freefair.lombok' version '8.6'
+    id "org.sonarqube" version "7.2.3.7755"
+    id "jacoco"
 }
 
 group = 'by.lobacevich'
@@ -9,11 +14,32 @@ repositories {
     mavenCentral()
 }
 
+jacocoTestReport {
+    reports {
+        xml.required = true
+    }
+}
+
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation 'org.springframework.cloud:spring-cloud-starter-gateway-server-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.0.0"
+    }
 }
 
 test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
 }

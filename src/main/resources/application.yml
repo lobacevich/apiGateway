@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: gateway
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: ${authService.url:http://localhost:8081}
+              predicates:
+                - Path=/auth/**,/tokens/**
+            - id: user-service
+              uri: ${userService.url:http://localhost:8082}
+              predicates:
+                - Path=/users/**,/cards/**
+            - id: order-service
+              uri: ${orderService.url:http://localhost:8083}
+              predicates:
+                - Path=/orders/**,/items/**
+
+  resilience4j:
+    circuitbreaker:
+      instances:
+        userService:
+          slidingWindowSize: 10
+          failureRateThreshold: 50
+          waitDurationInOpenState: 10s
+          permittedNumberOfCallsInHalfOpenState: 3
+          ignoreExceptions:
+            - by.lobacevich.gateway.exception.ServiceException
+
+logging:
+  file.name: logs/log.log
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.http.server.reactive: DEBUG
+
+authClient.url: http://localhost:8081
