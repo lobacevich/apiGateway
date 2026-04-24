@@ -27,8 +27,7 @@ public class AuthClient extends AbstractWebClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(new ValidateRequestDto(token))
                 .exchangeToMono(response -> handleResponse(response,
-                        ValidateResponseDto.class,
-                        SERVICE_NAME)
+                        ValidateResponseDto.class)
                 )
                 .onErrorMap(WebClientRequestException.class,
                         e -> onConnectionError(SERVICE_NAME));

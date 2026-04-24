@@ -7,18 +7,21 @@ networks:
     driver: bridge
   order-net:
     driver: bridge
+  payment-net:
+    driver: bridge
 
 volumes:
-  user-postgres-data:
-  auth-postgres-data:
-  order-postgres-data:
+  user_postgres_data:
+  auth_postgres_data:
+  order_postgres_data:
+  mongo_data:
 
 services:
   api-gateway:
     build: .
     container_name: api-gateway
     ports:
-      - "8080:8084"
+      - "8080:8085"
     networks:
       - internal
     depends_on:
@@ -28,11 +31,14 @@ services:
         condition: service_started
       order-service:
         condition: service_started
+      payment-service:
+        condition: service_started
     environment:
       SPRING_PROFILES_ACTIVE: docker
       USER_SERVICE_URL: http://user-service:8082
       AUTH_SERVICE_URL: http://auth-service:8081
       ORDER_SERVICE_URL: http://order-service:8083
+      PAYMENT_SERVICE_URL: http://payment-service:8084
 
   user-service:
     image: lobacevich21/user-service:latest
@@ -68,7 +74,7 @@ services:
     networks:
       - user-net
     volumes:
-      - user-postgres-data:/var/lib/postgresql/data
+      - user_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
@@ -120,7 +126,7 @@ services:
     networks:
       - auth-net
     volumes:
-      - auth-postgres-data:/var/lib/postgresql/data
+      - auth_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
@@ -138,6 +144,8 @@ services:
     depends_on:
       order-postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DB_URL: jdbc:postgresql://order-postgres:5432/postgres
@@ -145,6 +153,7 @@ services:
       DB_PASSWORD: postgres
       DB_DRIVER: org.postgresql.Driver
       USER_SERVICE_URL: http://user-service:8082
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
   order-postgres:
     image: postgres:17.6
@@ -158,9 +167,86 @@ services:
     networks:
       - order-net
     volumes:
-      - order-postgres-data:/var/lib/postgresql/data
+      - order_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  payment-service:
+    image: lobacevich21/payment-service:latest
+    container_name: payment-service
+    ports:
+      - "8084:8084"
+    networks:
+      - internal
+      - payment-net
+    depends_on:
+      mongodb:
+        condition: service_started
+      kafka:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_URI: mongodb://root:example@mongodb:27017/payments?authSource=admin
+      WEB_CLIENT_URL: https://www.random.org/integers/?num=1&min=1&max=100&col=1&base=10&format=plain&rnd=new
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
+    networks:
+      - payment-net
+    volumes:
+      - mongo_data:/data/db
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - internal
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    networks:
+      - internal
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8086:8080"
+    networks:
+      - internal
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 'kafka:9092'

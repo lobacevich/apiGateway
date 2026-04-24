@@ -1,5 +1,5 @@
 server:
-  port: 8084
+  port: 8085
 
 spring:
   cloud:
@@ -19,5 +19,9 @@ spring:
               uri: ${ORDER_SERVICE_URL}
               predicates:
                 - Path=/orders/**,/items/**
+            - id: payment-service
+              uri: ${PAYMENT_SERVICE_URL}
+              predicates:
+                - Path=/payments/**
 
 authClient.url: ${AUTH_SERVICE_URL}

@@ -10,16 +10,13 @@ import reactor.core.publisher.Mono;
 public abstract class AbstractWebClient {
 
     protected <T> Mono<T> handleResponse(ClientResponse response,
-                                         Class<T> dtoClass,
-                                         String serviceName) {
+                                         Class<T> dtoClass) {
         if (response.statusCode().is2xxSuccessful()) {
             return response.bodyToMono(dtoClass);
         }
         return response.bodyToMono(String.class)
                 .defaultIfEmpty("Authentication service error")
-                .flatMap(body -> {
-                    return Mono.error(new ServiceException(body, response.statusCode()));
-                });
+                .flatMap(body -> Mono.error(new ServiceException(body, response.statusCode())));
     }
 
     protected Throwable onConnectionError(String serviceName) {
