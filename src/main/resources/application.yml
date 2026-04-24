@@ -19,6 +19,10 @@ spring:
               uri: ${orderService.url:http://localhost:8083}
               predicates:
                 - Path=/orders/**,/items/**
+            - id: payment-service
+              uri: ${paymentService.url:http://localhost:8084}
+              predicates:
+                - Path=/payments/**
 
   resilience4j:
     circuitbreaker:
